@@ -1,0 +1,31 @@
+{% extends "index.html" %}
+{% set logged_in = logged_in %}
+
+{% block content %}
+
+<form method="POST" class="center">
+    <h1 class="center-text">{{edit_type}}</h1>
+
+    <table class="center">
+        <tr>
+            <td>subject</td>
+            <td><input type="text" name="subject" value="{{subject}}"></input></td>
+        </tr>
+
+        <tr>
+            <td>blog</td>
+            <td><textarea name="content">{{blog}}</textarea></td>
+        </tr>
+    </table>
+
+    <font color=#FF0000>{{blog_err}}</font>
+    <br>
+
+    <button class="button">Submit</button>
+</form>
+
+{% if edit_type == "Edit Post" %}
+    <a href="{{redirect_url}}"><h4 class="error-text center-text">Cancel Edit</h4></a>
+{% endif %}
+
+{% endblock %}

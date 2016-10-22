@@ -1,0 +1,35 @@
+{% extends "index.html" %}
+{% set logged_in = False %}
+
+{% block content %}
+
+<form method="POST" class="center">
+    <h1 class="center-text">Login</h1><br>
+
+    <table class="center">
+        <tr>
+            <label>
+                <td>Username:</td>
+                <td><input type="text" name="username" value="{{user}}"></input></td>
+            </label>
+        </tr>
+
+        <tr>
+            <label>
+                <td>Password:</td>
+                <td><input type="password" name="password"></input></td>
+            </label>
+        </tr>
+
+        {% if login_err %}
+            <td><font color=#FF0000>{{login_err}}</font></td>
+        {% endif %}
+        </tr>
+    </table>
+
+    <br>
+
+    <button class="button">Submit</button>
+</form>
+
+{% endblock %}

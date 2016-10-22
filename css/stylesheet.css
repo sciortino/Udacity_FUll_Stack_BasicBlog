@@ -1,0 +1,70 @@
+
+#blog-title {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.center {
+    margin: auto;
+    width: 50%;
+}
+
+.button {
+    display: block;
+    width: 100px;
+    margin: 10px auto;
+}
+
+.center-text {
+    text-align: center;
+}
+
+.banner {
+    margin-bottom: 20px;
+}
+
+.banner-link {
+    text-align: center;
+    font-weight: bold;
+}
+
+.link {
+    text-align: center;
+}
+
+#all-posts {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+#post-metadata {
+    float: bottom;
+}
+
+.post {
+    margin-bottom: 30px;
+    margin: auto;
+    width: 75%;
+}
+
+.post-content {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.error-text {
+    color: red;
+    font-weight: bold;
+}
+
+.comment {
+    background-color:#d3d3d3;
+}
+
+.comment-header {
+    font-style:italic;
+}
+
+.comment-body {
+
+}

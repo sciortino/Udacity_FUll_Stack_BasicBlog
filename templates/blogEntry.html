@@ -1,0 +1,60 @@
+{% extends "index.html" %}
+{% set logged_in = logged_in %}
+
+{% block content %}
+
+<div class="post">
+
+    {% if error_msg %}
+        <h4 class="error-text">{{error_msg}}</h4>
+    {% endif %}
+<!--     {% if edit_error %}
+        <h4 class="error-text">Error: You are not permitted to edit or delete posts that you didn't create!</h4>
+    {% endif %}
+
+    {% if like_error %}
+        <h4 class="error-text">Error: You cannot like your own posts!</h4>
+    {% endif %} -->
+
+    <h2 class="post-subject">{{post.subject}}</h2>
+    <div id="post-metadata">By: <b>{{post.author}}</b></div>
+    <div>{{post.created}}</div>
+
+    {% if logged_in %}
+        <a href="{{ edit_href }}">Edit</a>
+        <a href="{{ delete_href }}">Delete</a>
+    {% endif %}
+
+    <hr>
+    <p>{{post.content}}</p>
+    <hr>
+    {{like_count}} users like this post.
+    <br>
+
+    {% if show_like %}
+        <a href="{{ like_href }}">Like</a>
+    {% else %}
+        <a href="{{ unlike_href }}">Unlike</a>
+    {% endif %}
+
+    <br>
+
+    {% if comments %}
+        <h3>Comments:</h3>
+    {% endif %}
+
+    {% for comment in comments %}
+        <div class="comment">
+            <div class="comment-header"> <b>{{comment.author}}</b>: {{comment.created}}:</div>
+            <div class="comment-body">{{comment.comment}}</div>
+            <a href="{{ blog_id }}/{{ comment.key.id() }}/editcomment">[Edit Comment]</a>
+            <a href="{{ blog_id }}/{{ comment.key.id() }}/deletecomment">[Delete Comment]</a>
+        </div>
+        <br><br>
+    {% endfor %}
+
+    <br>
+    <a href="{{ comment_href }}">Add a Comment</a>
+</div>
+
+{% endblock %}

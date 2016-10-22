@@ -1,0 +1,60 @@
+{% extends "index.html" %}
+{% set logged_in = logged_in %}
+
+{% block content %}
+
+<form method="POST" class="center">
+
+    <h1 class="center-text">Signup</h1><br>
+
+    <table class="center">
+
+        <tr>
+            <label>
+                <td>Username:</td>
+                <td><input type="text" name="username" value="{{user}}"></input></td>
+                {% if user_err %}
+                    <td><font color=#FF0000>{{user_err}}</font></td>
+                {% endif %}
+            </label>
+        </tr>
+
+        <tr>
+            <label>
+                <td>Password:</td>
+                <td><input type="password" name="password"></input></td>
+                {% if pw_err %}
+                    <td><font color=#FF0000>{{pw_err}}</font></td>
+                {% endif %}
+            </label>
+        </tr>
+
+        <tr>
+            <label>
+                <td>Verify Password:</td>
+                <td><input type="password" name="verify"></input></td>
+                {% if verify_err %}
+                    <td><font color=#FF0000>{{verify_err}}</font></td>
+                {% endif %}
+            </label>
+        </tr>
+
+        <tr>
+            <label>
+                <td>Email (optional):</td>
+                <td><input type="text" name="email" value="{{email}}"></input></td>
+                {% if email_err %}
+                    <td><font color=#FF0000>{{email_err}}</font></td>
+                {% endif %}
+            </label>
+        </tr>
+
+    </table>
+
+    <br>
+
+    <button class="button">Submit</button>
+</form>
+
+
+{% endblock %}

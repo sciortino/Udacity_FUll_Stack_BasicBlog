@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" type="text/css" href="/css/stylesheet.css">
+        <title>Stephen's First Blog</title>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="row">
+                <h1 id ="blog-title"><a href='/blog'>Intro to Backend - Blog</a></h1>
+            </div>
+
+            {% if logged_in %}
+
+            <div class="row banner">
+                <div class="col-xs-4"></div>
+                <div class="col-xs-2 banner-link"><a href='/blog/newpost'>New Post</a></div>
+                <div class="col-xs-2 banner-link"><a href='/logout'>Log out</a></div>
+                <div class="col-xs-4"></div>
+            </div>
+
+            {% else %}
+            <div class="row banner">
+                <div class="col-xs-4"></div>
+                <div class="col-xs-2 banner-link"><a href='/signup'>Sign Up</a></div>
+                <div class="col-xs-2 banner-link"><a href='/login'>Log In</a></div>
+                <div class="col-xs-4"></div>
+            </div>
+            {% endif %}
+
+            {% block content %}
+            {% endblock %}
+
+        </div>
+    </body>
+
+</html>
