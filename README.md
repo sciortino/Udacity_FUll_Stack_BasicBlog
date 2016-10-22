@@ -1,5 +1,5 @@
-UDACITY Full Stack Nanodegree  
-Unit 3: Basic Blog  
+# UDACITY Full Stack Nanodegree  
+# Unit 3: Basic Blog  
 
 Instructions to run:  
 1. Download all files and save to a directory.  
