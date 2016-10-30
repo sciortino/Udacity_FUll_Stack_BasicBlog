@@ -1,6 +1,8 @@
 UDACITY Full Stack Nanodegree
 Unit 3: Basic Blog
 
+URL: udacity-basicblog-ss.appspot.com 
+
 Instructions to run:
 1. Download all files and save to a directory.
 2. Install Google App Engine
