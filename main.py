@@ -35,8 +35,6 @@ jinja_env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(template_dir), autoescape=True)
 
 
-
-
 # Security Functions
 
 
@@ -113,7 +111,6 @@ class MainHandler(Handler):
 
     def get(self):
         self.render_front()
-
 
 
 # Write new post
@@ -451,7 +448,6 @@ class WelcomeHandler(Handler):
         self.render("success.html", user=u.username_obj)
 
 
-
 # Write a new comment
 # Path: '/blog/post#/newcomment'
 
@@ -477,7 +473,8 @@ class NewComment(Handler):
             author = str(get_User_obj(self).username_obj)
 
             if comment:
-                p = Comment_class(post_id=post_id, comment=comment, author=author)
+                p = Comment_class(
+                    post_id=post_id, comment=comment, author=author)
                 p.put()
                 self.redirect('/blog/%s' % post_id)
 
@@ -559,7 +556,6 @@ class DeleteComment(Handler):
                               (str(int(blog_id)), "editdelete_cmt"))
         else:
             self.redirect("/login")
-
 
 
 app = webapp2.WSGIApplication([
