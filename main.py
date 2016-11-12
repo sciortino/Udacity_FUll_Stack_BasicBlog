@@ -23,10 +23,10 @@ import random
 import string
 import hashlib
 
-from models import Post_class
-from models import Comment_class
-from models import User_class
-from models import Likes_class
+from models import Post
+from models import Comment
+from models import User
+from models import Likes
 
 from google.appengine.ext import ndb
 
@@ -63,7 +63,7 @@ def get_User_id(self):
 
 def get_User_obj(self):
     user_id = get_User_id(self)
-    return User_class.get_by_id(int(user_id))
+    return User.get_by_id(int(user_id))
 
 
 def check_if_logged_in(self):
@@ -81,6 +81,17 @@ def error_msg(errorCode):
     elif errorCode == "like":
         return "You cannot like your own posts!"
 
+# Make sure post exists
+
+
+def post_exists(blog_id):
+    key = ndb.Key('Post', int(blog_id))
+    return True if key.get() else False
+
+
+def comment_exists(post_id):
+    key = ndb.Key('Comment', int(post_id))
+    return True if key.get() else False
 
 # Handler Classes
 
@@ -106,7 +117,7 @@ class MainHandler(Handler):
     def render_front(self):
         logged_in = check_if_logged_in(self)
         posts = ndb.gql(
-            "SELECT * FROM Post_class ORDER BY created DESC LIMIT 10 ")
+            "SELECT * FROM Post ORDER BY created DESC LIMIT 10 ")
         self.render("homepage.html", posts=posts, logged_in=logged_in)
 
     def get(self):
@@ -136,7 +147,7 @@ class PostHandler(Handler):
             author = str(get_User_obj(self).username_obj)
 
             if subject and blog:
-                p = Post_class(subject=subject, content=blog, author=author)
+                p = Post(subject=subject, content=blog, author=author)
                 p.put()
                 self.redirect('/blog/%s' % int(p.key.id()))
 
@@ -154,49 +165,55 @@ class PostHandler(Handler):
 class PostRender(Handler):
 
     def get(self, blog_id):
-        key = ndb.Key('Post_class', int(blog_id))
-        post = key.get()
-        show_like = True
 
-        error_message = ""
-        errorCode = self.request.get('err')
-        if errorCode:
-            error_message = error_msg(errorCode)
-
-        logged_in = check_if_logged_in(self)
-        if logged_in:
-            loggedin_user = str(get_User_obj(self).username_obj)
-            # Check if the user has already liked this post
-            q = Likes_class.query()
-            q_user = q.filter(Likes_class.post_id == str(int(blog_id)))
-            q_user = q_user.filter(Likes_class.username == loggedin_user)
-            q_user = q_user.get()
-            if q_user:
-                show_like = False
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            loggedin_user = ""
 
-        # Count how many times this post has been liked
-        q = Likes_class.query()
-        q_post = q.filter(Likes_class.post_id == str(int(blog_id)))
+            key = ndb.Key('Post', int(blog_id))
+            post = key.get()
+            show_like = True
 
-        # Gather comments
-        cmt = Comment_class.query()
-        cmt = cmt.filter(Comment_class.post_id == str(int(blog_id)))
+            error_message = ""
+            errorCode = self.request.get('err')
+            if errorCode:
+                error_message = error_msg(errorCode)
 
-        self.render("blogEntry.html",
-                    post=post,
-                    logged_in=logged_in,
-                    edit_href='/blog/edit/%s' % int(post.key.id()),
-                    delete_href='/blog/delete/%s' % int(post.key.id()),
-                    like_href='/blog/%s/like' % int(post.key.id()),
-                    unlike_href='/blog/%s/unlike' % int(post.key.id()),
-                    error_msg=error_message,
-                    show_like=show_like,
-                    like_count=q_post.count(),
-                    comments=cmt,
-                    comment_href='/blog/%s/newcomment' % int(post.key.id()),
-                    blog_id=str(int(blog_id)))
+            logged_in = check_if_logged_in(self)
+            if logged_in:
+                loggedin_user = str(get_User_obj(self).username_obj)
+                # Check if the user has already liked this post
+                q = Likes.query()
+                q_user = q.filter(Likes.post_id == str(int(blog_id)))
+                q_user = q_user.filter(Likes.username == loggedin_user)
+                q_user = q_user.get()
+                if q_user:
+                    show_like = False
+            else:
+                loggedin_user = ""
+
+            # Count how many times this post has been liked
+            q = Likes.query()
+            q_post = q.filter(Likes.post_id == str(int(blog_id)))
+
+            # Gather comments
+            cmt = Comment.query()
+            cmt = cmt.filter(Comment.post_id == str(int(blog_id)))
+
+            self.render("blogEntry.html",
+                        post=post,
+                        logged_in=logged_in,
+                        edit_href='/blog/edit/%s' % int(post.key.id()),
+                        delete_href='/blog/delete/%s' % int(post.key.id()),
+                        like_href='/blog/%s/like' % int(post.key.id()),
+                        unlike_href='/blog/%s/unlike' % int(post.key.id()),
+                        error_msg=error_message,
+                        show_like=show_like,
+                        like_count=q_post.count(),
+                        comments=cmt,
+                        comment_href='/blog/%s/newcomment' % int(
+                            post.key.id()),
+                        blog_id=str(int(blog_id)))
 
 # Edit existing post
 # Path: '/blog/edit/post#'
@@ -205,36 +222,44 @@ class PostRender(Handler):
 class EditPost(Handler):
 
     def get(self, blog_id):
-        logged_in = check_if_logged_in(self)
-        key = ndb.Key('Post_class', int(blog_id))
-        post = key.get()
-        subject = post.subject
-        blog = post.content
-
-        # Test if logged-in user is the article author
-        loggedin_user = str(get_User_obj(self).username_obj)
-        if loggedin_user == post.author:
-            self.render("post.html", edit_type="Edit Post",
-                        subject=subject, blog=blog,
-                        redirect_url='/blog/%s' % int(post.key.id()))
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect('/blog/%s?err=%s' %
-                          (int(post.key.id()), "editdelete"))
 
-    def post(self, blog_id):
-        logged_in = check_if_logged_in(self)
-        if logged_in:
-            key = ndb.Key('Post_class', int(blog_id))
+            logged_in = check_if_logged_in(self)
+            key = ndb.Key('Post', int(blog_id))
             post = key.get()
+            subject = post.subject
+            blog = post.content
+
+            # Test if logged-in user is the article author
             loggedin_user = str(get_User_obj(self).username_obj)
             if loggedin_user == post.author:
-                post.subject = self.request.get("subject")
-                post.content = self.request.get("content")
-                post.put()
-                self.redirect('/blog/%s' % int(post.key.id()))
+                self.render("post.html", edit_type="Edit Post",
+                            subject=subject, blog=blog,
+                            redirect_url='/blog/%s' % int(post.key.id()))
             else:
                 self.redirect('/blog/%s?err=%s' %
                               (int(post.key.id()), "editdelete"))
+
+    def post(self, blog_id):
+        if post_exists(blog_id) == False:
+            self.redirect("/")
+        else:
+
+            logged_in = check_if_logged_in(self)
+            if logged_in:
+                key = ndb.Key('Post', int(blog_id))
+                post = key.get()
+                loggedin_user = str(get_User_obj(self).username_obj)
+                if loggedin_user == post.author:
+                    post.subject = self.request.get("subject")
+                    post.content = self.request.get("content")
+                    post.put()
+                    self.redirect('/blog/%s' % int(post.key.id()))
+                else:
+                    self.redirect('/blog/%s?err=%s' %
+                                  (int(post.key.id()), "editdelete"))
 
 
 # Delete post
@@ -244,22 +269,26 @@ class EditPost(Handler):
 class DeletePost(Handler):
 
     def get(self, blog_id):
-        logged_in = check_if_logged_in(self)
-        if logged_in:
-            key = ndb.Key('Post_class', int(blog_id))
-            post = key.get()
-            subject = post.subject
-            blog = post.content
+        if post_exists(blog_id) == False:
+            self.redirect("/")
+        else:
 
-            if str(get_User_obj(self).username_obj) == post.author:
-                # Delete Post
-                key = ndb.Key('Post_class', int(blog_id))
-                key.delete()
-                self.redirect('/blog')
-            else:
-                # Re-render post with error
-                self.redirect('/blog/%s?err=%s' %
-                              (int(post.key.id()), "editdelete"))
+            logged_in = check_if_logged_in(self)
+            if logged_in:
+                key = ndb.Key('Post', int(blog_id))
+                post = key.get()
+                subject = post.subject
+                blog = post.content
+
+                if str(get_User_obj(self).username_obj) == post.author:
+                    # Delete Post
+                    key = ndb.Key('Post', int(blog_id))
+                    key.delete()
+                    self.redirect('/blog')
+                else:
+                    # Re-render post with error
+                    self.redirect('/blog/%s?err=%s' %
+                                  (int(post.key.id()), "editdelete"))
 
 
 #"Like" Post
@@ -269,33 +298,38 @@ class DeletePost(Handler):
 class LikePost(Handler):
 
     def get(self, blog_id):
-        # Check if the user is logged in
-        logged_in = check_if_logged_in(self)
-        if logged_in == False:
-            self.redirect('/login')
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            # Check if the logged in user is the author of the post
-            post_id = str(int(blog_id))
-            username = str(get_User_obj(self).username_obj)
 
-            key = ndb.Key('Post_class', int(blog_id))
-            post = key.get()
-            if post.author == username:
-                self.redirect('/blog/%s?err=%s' % (int(post.key.id()), "like"))
+            # Check if the user is logged in
+            logged_in = check_if_logged_in(self)
+            if logged_in == False:
+                self.redirect('/login')
             else:
-                # Check if the user has already liked this post
-                q = Likes_class.query()
-                q = q.filter(
-                    Likes_class.username == username,
-                    Likes_class.post_id == post_id)
-                q = q.get()
+                # Check if the logged in user is the author of the post
+                post_id = str(int(blog_id))
+                username = str(get_User_obj(self).username_obj)
 
-                if q:
-                    self.redirect('/blog/%s' % int(blog_id))
+                key = ndb.Key('Post', int(blog_id))
+                post = key.get()
+                if post.author == username:
+                    self.redirect('/blog/%s?err=%s' %
+                                  (int(post.key.id()), "like"))
                 else:
-                    L = Likes_class(post_id=str(post_id), username=username)
-                    L.put()
-                    self.redirect('/blog/%s' % int(blog_id))
+                    # Check if the user has already liked this post
+                    q = Likes.query()
+                    q = q.filter(
+                        Likes.username == username,
+                        Likes.post_id == post_id)
+                    q = q.get()
+
+                    if q:
+                        self.redirect('/blog/%s' % int(blog_id))
+                    else:
+                        L = Likes(post_id=str(post_id), username=username)
+                        L.put()
+                        self.redirect('/blog/%s' % int(blog_id))
 
 # Unlike Post:
 # Path: '/blog/post#/unlike'
@@ -304,27 +338,32 @@ class LikePost(Handler):
 class UnlikePost(Handler):
 
     def get(self, blog_id):
-        # Check if user is logged in
-        logged_in = check_if_logged_in(self)
-
-        if logged_in == True:
-            # Check if logged-in user is author of the post
-            key = ndb.Key('Post_class', int(blog_id))
-            post = key.get()
-            loggedin_user = str(get_User_obj(self).username_obj)
-
-            if loggedin_user == post.author:
-                # Re-render post with error
-                self.redirect('/blog/%s?err=%s' % (str(int(blog_id)), "like"))
-            else:
-                # Delete 'Like'
-                q = Likes_class.query(Likes_class.username == loggedin_user,
-                                      Likes_class.post_id == str(int(blog_id)))
-                for row in q:
-                    row.key.delete()
-                self.redirect('/blog/%s' % str(int(blog_id)))
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect("/login")
+
+            # Check if user is logged in
+            logged_in = check_if_logged_in(self)
+
+            if logged_in == True:
+                # Check if logged-in user is author of the post
+                key = ndb.Key('Post', int(blog_id))
+                post = key.get()
+                loggedin_user = str(get_User_obj(self).username_obj)
+
+                if loggedin_user == post.author:
+                    # Re-render post with error
+                    self.redirect('/blog/%s?err=%s' %
+                                  (str(int(blog_id)), "like"))
+                else:
+                    # Delete 'Like'
+                    q = Likes.query(Likes.username == loggedin_user,
+                                    Likes.post_id == str(int(blog_id)))
+                    for row in q:
+                        row.key.delete()
+                    self.redirect('/blog/%s' % str(int(blog_id)))
+            else:
+                self.redirect("/login")
 
 
 # Signup as a new user
@@ -367,8 +406,8 @@ class SignupHandler(Handler):
                         email_err=email_err,
                         user=user, email=email)
         else:
-            q = User_class.query()
-            q = q.filter(User_class.username_obj == user)
+            q = User.query()
+            q = q.filter(User.username_obj == user)
             q = q.get()
 
             if q:
@@ -383,7 +422,7 @@ class SignupHandler(Handler):
                 pw_hash = make_pw_hash(user, pw)
                 pw_hash_trim = pw_hash.split('|')[0]
 
-                u = User_class(
+                u = User(
                     username_obj=user, password_obj=pw_hash, email_obj=email)
                 u.put()
                 user_id = u.key.id()
@@ -408,8 +447,8 @@ class LoginHandler(Handler):
 
         login_err = ""
 
-        q = User_class.query()
-        q = q.filter(User_class.username_obj == user)
+        q = User.query()
+        q = q.filter(User.username_obj == user)
         q = q.get()
 
         if not q:
@@ -419,7 +458,7 @@ class LoginHandler(Handler):
             pw_hash = make_pw_hash(user, pw)
             pw_hash_trim = pw_hash.split('|')[0]
 
-            u = User_class(username_obj=user, password_obj=pw_hash)
+            u = User(username_obj=user, password_obj=pw_hash)
             u.put()
             user_id = u.key.id()
 
@@ -455,36 +494,44 @@ class WelcomeHandler(Handler):
 class NewComment(Handler):
 
     def get(self, blog_id):
-        logged_in = check_if_logged_in(self)
-
-        if logged_in:
-            self.render(
-                "comment.html", edit_type="New Comment", logged_in=True)
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect("/login")
+
+            logged_in = check_if_logged_in(self)
+
+            if logged_in:
+                self.render(
+                    "comment.html", edit_type="New Comment", logged_in=True)
+            else:
+                self.redirect("/login")
 
     def post(self, blog_id):
-        logged_in = check_if_logged_in(self)
-
-        if logged_in:
-
-            post_id = str(int(blog_id))
-            comment = self.request.get("comment")
-            author = str(get_User_obj(self).username_obj)
-
-            if comment:
-                p = Comment_class(
-                    post_id=post_id, comment=comment, author=author)
-                p.put()
-                self.redirect('/blog/%s' % post_id)
-
-            else:
-                blog_err = "Please don't submit an empty comment!"
-                self.render(
-                    "comment.html", edit_type="New Post",
-                    content=content, blog_err=blog_err)
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect("/login")
+
+            logged_in = check_if_logged_in(self)
+
+            if logged_in:
+
+                post_id = str(int(blog_id))
+                comment = self.request.get("comment")
+                author = str(get_User_obj(self).username_obj)
+
+                if comment:
+                    p = Comment(
+                        post_id=post_id, comment=comment, author=author)
+                    p.put()
+                    self.redirect('/blog/%s' % post_id)
+
+                else:
+                    blog_err = "Please don't submit an empty comment!"
+                    self.render(
+                        "comment.html", edit_type="New Post",
+                        content=content, blog_err=blog_err)
+            else:
+                self.redirect("/login")
 
 # Edit comment
 # Path: '/blog/post#/comment#/editcomment'
@@ -493,43 +540,58 @@ class NewComment(Handler):
 class EditComment(Handler):
 
     def get(self, blog_id, post_id):
-        # Check if user is logged in
-        logged_in = check_if_logged_in(self)
-
-        if logged_in:
-            # Check if logged-in user is author of the comment
-            key = ndb.Key('Comment_class', int(post_id))
-            comment = key.get()
-            loggedin_user = str(get_User_obj(self).username_obj)
-            if loggedin_user == comment.author:
-                self.render("comment.html", edit_type="Edit Comment",
-                            logged_in=True,
-                            blog_id=str(int(blog_id)),
-                            comment=comment.comment,
-                            redirect_url='/blog/%s' % str(int(blog_id)))
-            else:
-                # Re-render post with error
-                self.redirect('/blog/%s?err=%s' %
-                              (str(int(blog_id)), "editdelete_cmt"))
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect("/login")
-
-    def post(self, blog_id, post_id):
-        logged_in = check_if_logged_in(self)
-
-        if logged_in:
-            key = ndb.Key('Comment_class', int(post_id))
-            comment = key.get()
-            loggedin_user = str(get_User_obj(self).username_obj)
-            if loggedin_user == comment.author:
-                comment.comment = self.request.get("comment")
-                comment.put()
+            if comment_exists(post_id) == False:
                 self.redirect('/blog/%s' % str(int(blog_id)))
             else:
-                self.redirect('/blog/%s?err=%s' %
-                              (str(int(blog_id)), "editdelete_cmt"))
+
+                # Check if user is logged in
+                logged_in = check_if_logged_in(self)
+
+                if logged_in:
+                    # Check if logged-in user is author of the comment
+                    key = ndb.Key('Comment', int(post_id))
+                    comment = key.get()
+                    loggedin_user = str(get_User_obj(self).username_obj)
+                    if loggedin_user == comment.author:
+                        self.render("comment.html", edit_type="Edit Comment",
+                                    logged_in=True,
+                                    blog_id=str(int(blog_id)),
+                                    comment=comment.comment,
+                                    redirect_url='/blog/%s' %
+                                    str(int(blog_id)))
+                    else:
+                        # Re-render post with error
+                        self.redirect('/blog/%s?err=%s' %
+                                      (str(int(blog_id)), "editdelete_cmt"))
+                else:
+                    self.redirect("/login")
+
+    def post(self, blog_id, post_id):
+        if post_exists(blog_id) == False:
+            self.redirect("/")
         else:
-            self.redirect("/login")
+            if comment_exists(post_id) == False:
+                self.redirect('/blog/%s' % str(int(blog_id)))
+            else:
+
+                logged_in = check_if_logged_in(self)
+
+                if logged_in:
+                    key = ndb.Key('Comment', int(post_id))
+                    comment = key.get()
+                    loggedin_user = str(get_User_obj(self).username_obj)
+                    if loggedin_user == comment.author:
+                        comment.comment = self.request.get("comment")
+                        comment.put()
+                        self.redirect('/blog/%s' % str(int(blog_id)))
+                    else:
+                        self.redirect('/blog/%s?err=%s' %
+                                      (str(int(blog_id)), "editdelete_cmt"))
+                else:
+                    self.redirect("/login")
 
 # Delete Comment:
 # Path: '/blog/post#/comment#/deletecomment'
@@ -538,24 +600,31 @@ class EditComment(Handler):
 class DeleteComment(Handler):
 
     def get(self, blog_id, post_id):
-        # Check if user is logged in
-        logged_in = check_if_logged_in(self)
-
-        if logged_in == True:
-            # Check if logged-in user is author of the comment
-            key = ndb.Key('Comment_class', int(post_id))
-            comment = key.get()
-            loggedin_user = str(get_User_obj(self).username_obj)
-            if loggedin_user == comment.author:
-                # Delete Post
-                key.delete()
+        if post_exists(blog_id) == False:
+            self.redirect("/")
+        else:
+            if comment_exists(post_id) == False:
                 self.redirect('/blog/%s' % str(int(blog_id)))
             else:
-                # Re-render post with error
-                self.redirect('/blog/%s?err=%s' %
-                              (str(int(blog_id)), "editdelete_cmt"))
-        else:
-            self.redirect("/login")
+
+                # Check if user is logged in
+                logged_in = check_if_logged_in(self)
+
+                if logged_in == True:
+                    # Check if logged-in user is author of the comment
+                    key = ndb.Key('Comment', int(post_id))
+                    comment = key.get()
+                    loggedin_user = str(get_User_obj(self).username_obj)
+                    if loggedin_user == comment.author:
+                        # Delete Post
+                        key.delete()
+                        self.redirect('/blog/%s' % str(int(blog_id)))
+                    else:
+                        # Re-render post with error
+                        self.redirect('/blog/%s?err=%s' %
+                                      (str(int(blog_id)), "editdelete_cmt"))
+                else:
+                    self.redirect("/login")
 
 
 app = webapp2.WSGIApplication([

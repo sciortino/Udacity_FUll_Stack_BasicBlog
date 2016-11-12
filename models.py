@@ -4,7 +4,7 @@ from google.appengine.ext import ndb
 # Post Model
 
 
-class Post_class(ndb.Model):
+class Post(ndb.Model):
     subject = ndb.StringProperty(required=True)
     content = ndb.TextProperty(required=True)
     author = ndb.StringProperty(required=True)
@@ -13,7 +13,7 @@ class Post_class(ndb.Model):
 # Comment model
 
 
-class Comment_class(ndb.Model):
+class Comment(ndb.Model):
     post_id = ndb.StringProperty(required=True)
     comment = ndb.TextProperty(required=True)
     author = ndb.StringProperty(required=True)
@@ -22,7 +22,7 @@ class Comment_class(ndb.Model):
 # User model
 
 
-class User_class(ndb.Model):
+class User(ndb.Model):
     username_obj = ndb.StringProperty(required=True)
     password_obj = ndb.StringProperty(required=True)
     email_obj = ndb.StringProperty(required=False)
@@ -31,7 +31,7 @@ class User_class(ndb.Model):
 # Likes model
 
 
-class Likes_class(ndb.Model):
+class Likes(ndb.Model):
     post_id = ndb.StringProperty(required=True)
     username = ndb.StringProperty(required=True)
     created = ndb.DateTimeProperty(auto_now_add=True)
